@@ -1,7 +1,7 @@
 ARG ALPINE_VERSION=3.14
-ARG NGINX_VERSION=1.21.0
+ARG NGINX_VERSION=1.27.0
 ARG NGINX_RTMP_VERSION=1.2.2
-ARG FFMPEG_VERSION=4.4
+ARG FFMPEG_VERSION=7.0
 ARG S3FS_VERSION=v1.85
 
 # Build the NGINX-build image.
@@ -59,27 +59,38 @@ ARG PREFIX=/usr/local
 ARG MAKEFLAGS="-j4"
 
 # FFmpeg build dependencies.
-RUN apk add --update \
-  build-base \
-  coreutils \
-  freetype-dev \
-  lame-dev \
-  libogg-dev \
-  libass \
-  libass-dev \
-  libvpx-dev \
-  libvorbis-dev \
-  libwebp-dev \
-  libtheora-dev \
-  openssl-dev \
-  opus-dev \
-  pkgconf \
-  pkgconfig \
-  rtmpdump-dev \
-  wget \
-  x264-dev \
-  x265-dev \
-  yasm
+RUN apk update && \
+    apk add --no-cache \
+        autoconf \
+        automake \
+        build-base \
+        cmake \
+        coreutils \
+        git \
+        libass-dev \
+        freetype-dev \
+        libtool \
+        pkgconfig \
+        wget \
+        yasm \
+        zlib-dev \
+        fdk-aac-dev \
+        lame-dev \
+        opus-dev \
+        libass \
+        libogg-dev \
+        libtheora-dev \
+        libvorbis-dev \
+        libvpx-dev \
+        libwebp-dev \
+        openssl-dev \
+        pkgconf \
+        rtmpdump-dev \
+        x264-dev \
+        x265-dev \
+        nasm \
+        yasm \
+        libunistring
 
 RUN echo http://dl-cdn.alpinelinux.org/alpine/edge/community >> /etc/apk/repositories
 RUN apk add --update fdk-aac-dev
@@ -109,7 +120,7 @@ RUN cd /tmp/ffmpeg-${FFMPEG_VERSION} && \
   --enable-libwebp \
   --enable-librtmp \
   --enable-postproc \
-  --enable-avresample \
+  #--enable-avresample \
   --enable-libfreetype \
   --enable-openssl \
   --disable-debug \
@@ -123,7 +134,6 @@ RUN rm -rf /var/cache/* /tmp/*
 
 # Build the release image.
 FROM alpine:${ALPINE_VERSION}
-LABEL MAINTAINER Fábio Assunção <fabio@codions.com>
 
 ENV FILESYSTEM 'local'
 ENV STORAGE_PATH '/opt/data'
@@ -154,15 +164,30 @@ COPY --from=build-nginx /usr/local/nginx /usr/local/nginx
 COPY --from=build-nginx /etc/nginx /etc/nginx
 COPY --from=build-ffmpeg /usr/local /usr/local
 COPY --from=build-ffmpeg /usr/lib/libfdk-aac.so.2 /usr/lib/libfdk-aac.so.2
+COPY --from=build-ffmpeg /usr/lib/libwebpmux.so.3 /usr/lib/libwebpmux.so.3
+COPY --from=build-ffmpeg /usr/lib/libmp3lame.so.0 /usr/lib/libmp3lame.so.0
 
 ENV PATH "${PATH}:/usr/local/nginx/sbin"
 ADD nginx.conf /etc/nginx/nginx.conf.template
 RUN mkdir -p /opt/data && mkdir /www
 ADD static /www/static
 
-# Add S3FS
-RUN echo http://dl-cdn.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositories
-RUN apk --update add s3fs-fuse
+# Add S3FS Method 1
+# RUN echo http://dl-cdn.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositories
+# RUN apk --update add s3fs-fuse
+
+# S3FS Method 2
+# try to add it my way from  https://hub.docker.com/r/appsoa/docker-alpine-s3fs/dockerfile
+# Does not work either, I guess, due to using alpine and build scripts.
+# ARG S3FS_VERSION=v1.82
+# RUN git clone https://github.com/s3fs-fuse/s3fs-fuse.git && \
+#     cd s3fs-fuse \
+#     git checkout tags/${S3FS_VERSION} && \
+#     ./autogen.sh && \
+#     ./configure --prefix=/usr && \
+#     make && \
+#     make install
+
 
 ADD entrypoint.sh /
 RUN chmod +x /entrypoint.sh
