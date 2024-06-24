@@ -8,7 +8,8 @@ A Dockerfile installing NGINX, nginx-rtmp-module and FFmpeg from source with def
 * Default HLS settings (See: [nginx.conf](nginx.conf))
 
 Originally forked from https://github.com/codions/docker-stream-server, this version contains newer Nginx and Ffmpeg 🙇 versions.
-Under the hood, still has the ability to support S3FS, however, currently it is broken, see the Docker file for my struggles of installing the requirements for S3FS support.
+Under the hood, still has the ability to support S3FS, however, currently is broken, see the Docker file for my struggles of installing the requirements for S3FS support.
+If you don't need S3FS support, you are good to go.
 
 ## Usage
 
