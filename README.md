@@ -1,34 +1,20 @@
-# Docker + Nginx + RTMP + S3FS
+# Docker + Nginx + RTMP
+
 A Dockerfile installing NGINX, nginx-rtmp-module and FFmpeg from source with default settings for HLS live streaming. Built on Alpine Linux.
 
-* Nginx 1.21.0 (Stable version compiled from source)
+* Nginx 1.27.0 (Stable version compiled from source)
 * nginx-rtmp-module 1.2.2 (compiled from source)
-* ffmpeg 4.4 (compiled from source)
+* ffmpeg 7.0 (compiled from source)
 * Default HLS settings (See: [nginx.conf](nginx.conf))
-* S3FS Fuse (S3-Compatible Object Storage)
+
+Originally forked from https://github.com/codions/docker-stream-server, this version contains newer Nginx and Ffmpeg 🙇 versions.
+Under the hood, still has the ability to support S3FS, however, currently it is broken, see the Docker file for my struggles of installing the requirements for S3FS support.
 
 ## Usage
 
 Run container with local storage:
 ```
-docker run --rm -it \
--p 1935:1935 \
--p 8080:80 \
-ghcr.io/codions/docker-stream-server/docker-stream-server:latest
-```
-
-Run container with S3 storage:
-```
-docker run --rm --privileged -it \
--e FILESYSTEM=s3
--e AWS_S3_URL=${AWS_S3_URL} \
--e AWS_S3_REGION=${AWS_S3_REGION} \
--e AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME} \
--e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
--e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
--p 1935:1935 \
--p 8080:80 \
-ghcr.io/codions/docker-stream-server/docker-stream-server:latest
+docker compose up --build
 ```
 
 Stream live content to:
@@ -40,16 +26,6 @@ rtmp://<server ip>:1935/stream/$STREAM_NAME
 * Stream Type: `Custom Streaming Server`
 * URL: `rtmp://localhost:1935/stream`
 * Example Stream Key: `hello`
-
-### Watch Stream using AWS and CloudFront
-
-Access by using your S3 public URL.
-
-For example `https://your-s3-bucket.s3.us-east-2.amazonaws.com/hls/hello.m3u8`
-
-or you can set your cloudfront (cache disabled) distribution then based on your S3
-
->  Don't forget to set public access and enable CORS in your s3 bucket
 
 ### Watch Stream using Local Storage
 * Load up the example hls.js player in your browser:
@@ -77,6 +53,7 @@ ssl_certificate_key /opt/certs/example.com.key;
 > This will enable HTTPS using a self-signed certificate supplied in [/certs](/certs). If you wish to use HTTPS, it is highly recommended to obtain your own certificates and update the `ssl_certificate` and `ssl_certificate_key` paths.
 
 ## Credits
+* https://github.com/codions/docker-stream-server
 * https://github.com/alfg/docker-nginx-rtmp
 * https://github.com/TareqAlqutami/rtmp-hls-server
 * https://github.com/efriandika/streaming-server
